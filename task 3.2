@@ -1,0 +1,990 @@
+/////////////////////////////////////////////////////////////////////////
+//// This is the template for FIT1047 S1 2025, Assignment 2 Part 3.  ////
+//// Please follow the assignment specification published on Moodle. ////
+//// You must use this template for your code.                       ////
+/////////////////////////////////////////////////////////////////////////
+
+/ This is the main program. You can un-comment the different parts
+/ to test your subroutines, depending on which parts of the assignment
+/ you attempt to complete.
+
+/ Un-comment the next line if you have implemented the SubClearDisplay subroutine.
+/ JnS SubClearDisplay
+
+/ Un-comment the next block to test your SubPaintChar subroutine.
+Load FontAddr
+Add SIXTYFOUR 
+Store PaintCharCharacter 
+Load Display22 
+Store PaintCharDisplay 
+JnS SubPaintChar 
+
+/ Un-comment the next block to test your SubPaintString subroutine.
+Load StringAddr
+JnS SubPaintString
+
+/ This is the end of the main program.
+Halt
+
+//////////////////////////////////////////////////////////////////
+/////// Add your subroutines below this comment.           ///////
+//////////////////////////////////////////////////////////////////
+
+/ Add your subroutine SubClearDisplay here.
+SubClearDisplay, HEX 0
+
+/ Add your subroutine for painting a character here.
+PaintCharCharacter, HEX 0    / Argument: Address of character data in font table
+PaintCharDisplay, HEX 0      / Argument: Starting address in graphics memory
+SubPaintChar, HEX 0          / Subroutine entry point; stores return address
+    / Initialize font pointer to the character’s data address
+    Load PaintCharCharacter
+    Store FontPtr
+    / Initialize display pointer to the graphics memory starting address
+    Load PaintCharDisplay
+    Store DisplayPtr
+    / Set row counter to 0 (counts rows 0 to 7)
+    Clear
+    Store RowCounter
+OuterLoop,    Load RowCounter / Check if RowCounter < 8 to process all 8 rows
+    Subt EIGHT
+    Skipcond 800         / If AC < 0 (RowCounter < 8), skip to continue loop
+    Jump OuterDone       / Else, all rows done, exit loop
+    / Set column counter to 0 (counts columns 0 to 3)
+    Clear
+    Store ColCounter
+InnerLoop, Load ColCounter / Check if ColCounter < 4 to process all 4 pixels in the row
+    Subt FOUR
+    Skipcond 800         / If AC < 0 (ColCounter < 4), skip to continue loop
+    Jump InnerDone       / Else, row done, exit inner loop
+    / Load pixel from font data using indirect addressing
+    LoadI FontPtr
+    Store Temp           / Store temporarily since MARIE can’t do indirect-to-indirect
+    / Store pixel into graphics memory using indirect addressing
+    Load Temp
+    StoreI DisplayPtr
+    / Increment font pointer to next pixel in font data
+    Load FontPtr
+    Add ONE
+    Store FontPtr
+    / Increment display pointer to next position in graphics memory
+    Load DisplayPtr
+    Add ONE
+    Store DisplayPtr
+    / Increment column counter
+    Load ColCounter
+    Add ONE
+    Store ColCounter
+    Jump InnerLoop       / Repeat inner loop for next pixel
+InnerDone, Load DisplayPtr
+    / After copying 4 pixels, adjust display pointer to next row
+    / Each graphics row is 16 wide; we’ve moved 4, so add 12 (16 - 4)
+    Add TWELVE
+    Store DisplayPtr
+    / Increment row counter
+    Load RowCounter
+    Add ONE
+    Store RowCounter
+    Jump OuterLoop       / Repeat outer loop for next row
+OuterDone, JumpI SubPaintChar / Return to caller using return address stored by JnS
+
+/ Add your subroutine for painting a string of characters,
+/ one at a time, here.
+SubPaintString, HEX 0
+
+/ Define variables for SubPaintChar
+FontPtr, HEX 0      / Current position in font data
+DisplayPtr, HEX 0   / Current position in graphics memory
+RowCounter, HEX 0   / Counter for rows (0 to 7)
+ColCounter, HEX 0   / Counter for columns (0 to 3)
+Temp, HEX 0         / Temporary storage for pixel data
+
+/ Define constants
+FOUR, DEC 4         / Number of pixels per row
+EIGHT, DEC 8        / Number of rows per character
+TWELVE, DEC 12      / Offset to next row in graphics memory (16 - 4)
+
+//////////////////////////////////////////////////////////////////
+/////// No need to edit anything below this line.          ///////
+/////// The rest of the file contains data for testing     ///////
+/////// and the font data. You should not change anything  ///////
+/////// below.                                             ///////
+//////////////////////////////////////////////////////////////////
+
+/ Here are some data labels that are useful for testing the code.
+ONE, DEC 1
+Display22, HEX 0F11 
+SIXTYFOUR, DEC 64
+
+StringAddr, ADR StringStart
+StringStart, HEX 06D    / 'm' (ASCII code)
+             HEX 061    / 'a'
+             HEX 072    / 'r'
+             HEX 069    / 'i'
+             HEX 065    / 'e'
+             HEX 0    / end-of-string marker
+
+/ This is the "font", the memory that stores character data for the display.
+/ The characters are stored in the order a-z.
+/ Each character is 4 pixels wide and 8 pixels high.
+/ The data for each character is stored row by row, with each pixel
+/ being represented as one word that is either FFFF (white) or 0000 (black).
+
+FontAddr, ADR FontStart
+FontStart, HEX FFFF / Start of character 'a'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX 0000 / Start of character 'b'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'c'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'd'
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'e'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'f'
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'g'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+
+           HEX 0000 / Start of character 'h'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'i'
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'j'
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+
+           HEX 0000 / Start of character 'k'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'l'
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'm'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'n'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'o'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'p'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'q'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+
+           HEX FFFF / Start of character 'r'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 's'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 't'
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'u'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'v'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'w'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'x'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+
+           HEX FFFF / Start of character 'y'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+
+           HEX FFFF / Start of character 'z'
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX 0000
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
+           HEX FFFF
