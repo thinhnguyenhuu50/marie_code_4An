@@ -123,14 +123,25 @@ EndMultiply, Load FontAddr            / Address of FontStart
     / Delay
     Load DELAY_COUNT
     Store DelayCounter
-DelayLoop, Load DelayCounter
-    Skipcond 400             / If DelayCounter > 0
-    Jump EndDelay
-    Load DelayCounter
-    Subt ONE
-    Store DelayCounter
-    Jump DelayLoop
-EndDelay, Load StringPtr
+DelayLoop, Load OUTER_DELAY_COUNT    // Load the outer loop counter
+	Store OuterCounter        // Store it in OuterCounter
+OuterDelayLoop,           Load DELAY_COUNT        // Load the inner loop counter
+  Store DelayCounter      // Store it in DelayCounter
+InnerDelayLoop,           Load DelayCounter       // Check if DelayCounter is zero
+  Skipcond 400            // Skip next instruction if DelayCounter >= 0
+  Jump EndInnerDelay      // Exit inner loop if DelayCounter < 0
+  Load DelayCounter       // Decrement DelayCounter
+  Subt ONE                // Subtract 1
+  Store DelayCounter      // Store the new value
+  Jump InnerDelayLoop     // Repeat inner loop
+EndInnerDelay,            Load OuterCounter       // Decrement OuterCounter
+  Subt ONE                // Subtract 1
+  Store OuterCounter      // Store the new value
+  Skipcond 400            // Skip next instruction if OuterCounter >= 0
+  Jump OuterDelayLoop     // Repeat outer loop if OuterCounter >= 0
+
+	
+	Load StringPtr
     Add ONE
     Store StringPtr          / Move to next character
     Jump PaintLoop
@@ -142,11 +153,12 @@ Offset, HEX 0            / Char - 'a'
 FontOffset, HEX 0        / Offset * 32
 TempOffset, HEX 0        / Loop counter for multiplication
 DelayCounter, HEX 0      / Delay loop counter
+OuterCounter, HEX 0
 ASCII_A, HEX 061         / ASCII code for 'a'
 THIRTYTWO, DEC 32        / Size of each character in font
 DELAY_COUNT, DEC 60000    / Delay duration (adjustable)
+OUTER_DELAY_COUNT, DEC 1000 / (adjustable) decrease it if too slow, otherwise increase
 ZERO, DEC 0              / Constant 0
-
 //////////////////////////////////////////////////////////////////
 /////// No need to edit anything below this line.          ///////
 /////// The rest of the file contains data for testing     ///////
