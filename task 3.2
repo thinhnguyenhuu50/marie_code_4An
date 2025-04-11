@@ -11,107 +11,141 @@
 / Un-comment the next line if you have implemented the SubClearDisplay subroutine.
 / JnS SubClearDisplay
 
+
 / Un-comment the next block to test your SubPaintChar subroutine.
-  Load FontAddr
-  Add SIXTYFOUR 
-  Store PaintCharCharacter 
-  Load Display22 
-  Store PaintCharDisplay 
-  JnS SubPaintChar 
+/ Load FontAddr
+/ Add SIXTYFOUR 
+/ Store PaintCharCharacter 
+/ Load Display22 
+/ Store PaintCharDisplay 
+/ JnS SubPaintChar 
 
 / Un-comment the next block to test your SubPaintString subroutine.
-/ Load StringAddr
-/ JnS SubPaintString
-
+Load StringAddr
+JnS SubPaintString
 / This is the end of the main program.
 Halt
 
-//////////////////////////////////////////////////////////////////
-/////// Add your subroutines below this comment.           ///////
-//////////////////////////////////////////////////////////////////
-
+/ SubClearDisplay (this was working fine)
 / Add your subroutine SubClearDisplay here.
 SubClearDisplay, HEX 0
+// Initialize pointer to start of display (0F00)
+    	   Load DisplayStart        / Load 0F00
+    	   Store ClearPtr           / Store in pointer variable
+    
+ClearLoop, Load FFFF                / Load white pixel value (FFFF)
+    	   StoreI ClearPtr          / Store at current pointer location
+    
+    / Increment pointer and check if we’re done
+    Load ClearPtr
+    Add ONE                  / Move to next address
+    Store ClearPtr
+    
+    / Check if we’ve reached the end (0FFF)
+    Load ClearPtr
+    Subt DisplayEnd      / Compare with 1000 (0FFF + 1)
+    Skipcond 800             / If AC >= 0 (pointer >= 1000), skip next
+    Jump ClearLoop           / Else, continue looping
+    
+    / Done clearing, return
+    JumpI SubClearDisplay    / Return to caller
 
-/ Add your subroutine for painting a character here.
-PaintCharCharacter, HEX 0 
-PaintCharDisplay, HEX 0 
-SubPaintChar, HEX 0 
+/ SubPaintChar
+PaintCharCharacter, HEX 0    / Font address for character
+PaintCharDisplay, HEX 0      / Display start address
+SubPaintChar, HEX 0          / Subroutine entry
 
-/ Implement SubPaintChar
-/ This subroutine paints a character to the graphics memory
-/ PaintCharCharacter: address of first pixel data in Font
-/ PaintCharDisplay: address of top-left corner in graphics memory
-Store RetAddr            / Store return address
 
-Clear                    / Initialize PixelCounter to 0
-Store PixelCounter
-Clear                    / Initialize ColCounter to 0
-Store ColCounter
+/Subroutine vẽ kí tự
+Start,      Load RowCount           / Initialize row counter
+    	    Store TempRow
+RowLoop,    Load PixelCount         / Initialize pixel counter for each row
+    	    Store TempPixel
+PixelLoop,  LoadI PaintCharCharacter / Load pixel value from font
+		    StoreI PaintCharDisplay  / Store to display
+			Load PaintCharCharacter 
+		    Add ONE
+		    Store PaintCharCharacter
+		    Load PaintCharDisplay    
+		    Add ONE
+		    Store PaintCharDisplay
+		    Load TempPixel   
+		    Subt ONE
+		    Store TempPixel
+		    Skipcond 400         
+		    Jump PixelLoop
 
-Load PaintCharCharacter  / Load the address of the first pixel in the font
-Store FontPos
-Load PaintCharDisplay    / Load the address of the top-left corner in graphics memory
-Store DisplayPos
+			    
+			Load PaintCharDisplay    
+		    Add RowOffset          
+		    Store PaintCharDisplay   
+		    Load TempRow            
+		    Subt ONE
+		    Store TempRow
+		    Skipcond 400           
+		    Jump RowLoop             
 
-/ Main loop - iterate through all 32 pixels
-MainLoop, Load PixelCounter
-         Subt ThirtyTwo
-         Skipcond 000     / If PixelCounter >= 32, exit
-         Jump ExitSubroutine
+		    JumpI SubPaintChar  
+		      / Return
 
-/ Load pixel data from font and store it in graphics memory
-         LoadI FontPos    / Load pixel data from font
-         StoreI DisplayPos / Store pixel data in graphics memory
-
-/ Increment positions
-         Load FontPos
-         Add One
-         Store FontPos
-
-         Load DisplayPos
-         Add One
-         Store DisplayPos
-
-/ Increment counters
-         Load PixelCounter
-         Add One
-         Store PixelCounter
-
-         Load ColCounter
-         Add One
-         Store ColCounter
-         Subt Four
-         Skipcond 400    / If ColCounter == 4, reset ColCounter and adjust display position
-         Jump MainLoop
-
-/ Reset ColCounter and adjust display position
-         Clear
-         Store ColCounter
-         Load DisplayPos
-         Add Twelve      / Add (display width - character width) = (16 - 4) = 12
-         Store DisplayPos
-
-         Jump MainLoop
-
-/ Exit subroutine
-ExitSubroutine, Load RetAddr
-              JumpI RetAddr
-
-/ Variables
-RetAddr, HEX 0
-PixelCounter, HEX 0
-ColCounter, HEX 0
-FontPos, HEX 0
-DisplayPos, HEX 0
-ThirtyTwo, DEC 32
-Four, DEC 4
-Twelve, DEC 12
-One, DEC 1
-
-/ Add your subroutine for painting a string of characters,
-/ one at a time, here.
 SubPaintString, HEX 0
+	Store StringPtr          / Save string start address from AC
+PaintLoop,  JnS SubClearDisplay      / Clear the display
+    LoadI StringPtr          / Load current character
+    Store Char
+    Load Char
+    Skipcond 0C00             / If Char == 0, end
+    Jump EndPaintString
+    / Calculate font address: FontStart + (Char - 'a') * 32
+    Load Char
+    Subt ASCII_A             / Offset = Char - 0x61
+    Store Offset
+    Load ZERO
+    Store FontOffset
+    Load Offset
+    Store TempOffset
+MultiplyLoop, Load TempOffset
+    Skipcond 800             / If TempOffset > 0
+    Jump EndMultiply
+    Load FontOffset
+    Add THIRTYTWO            / Add 32
+    Store FontOffset
+    Load TempOffset
+    Subt ONE
+    Store TempOffset
+    Jump MultiplyLoop
+EndMultiply, Load FontAddr            / Address of FontStart
+    Add FontOffset
+    Store PaintCharCharacter / Set font address
+    Load DisplayStart
+    Store PaintCharDisplay   / Set display address (0F00)
+    JnS SubPaintChar         / Paint character
+    / Delay
+    Load DELAY_COUNT
+    Store DelayCounter
+DelayLoop, Load DelayCounter
+    Skipcond 400             / If DelayCounter > 0
+    Jump EndDelay
+    Load DelayCounter
+    Subt ONE
+    Store DelayCounter
+    Jump DelayLoop
+EndDelay, Load StringPtr
+    Add ONE
+    Store StringPtr          / Move to next character
+    Jump PaintLoop
+EndPaintString, JumpI SubPaintString     / Return
+
+StringPtr, HEX 0         / Current string position
+Char, HEX 0              / Current character
+Offset, HEX 0            / Char - 'a'
+FontOffset, HEX 0        / Offset * 32
+TempOffset, HEX 0        / Loop counter for multiplication
+DelayCounter, HEX 0      / Delay loop counter
+ASCII_A, HEX 061         / ASCII code for 'a'
+THIRTYTWO, DEC 32        / Size of each character in font
+DELAY_COUNT, DEC 60000    / Delay duration (adjustable)
+ZERO, DEC 0              / Constant 0
 
 //////////////////////////////////////////////////////////////////
 /////// No need to edit anything below this line.          ///////
@@ -123,8 +157,16 @@ SubPaintString, HEX 0
 / Here are some data labels that are useful for testing the code.
 ONE, DEC 1
 Display22, HEX 0F11 
-SIXTYFOUR, DEC 64
-
+SIXTYFOUR, DEC 32
+DisplayStart, HEX 0F00      / Start of display memory
+DisplayEnd, HEX 1000        / End of display + 1 (0FFF + 1)
+ClearPtr, HEX 0             / Pointer for current address
+FFFF, HEX FFFF              / White pixel value
+RowCount, DEC 8              / 8 rows
+PixelCount, DEC 4            / 4 pixels per row
+RowOffset, DEC 12            / Offset to next row (16-4)
+TempRow, HEX 0               / Row counter
+TempPixel, HEX 0             / Pixel counter
 StringAddr, ADR StringStart
 StringStart, HEX 06D    / 'm' (ASCII code)
              HEX 061    / 'a'
@@ -997,4 +1039,3 @@ FontStart, HEX FFFF / Start of character 'a'
            HEX FFFF
            HEX FFFF
            HEX FFFF
-
